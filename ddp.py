@@ -5,9 +5,11 @@ from test.test_defaultdict import defaultdict
 from sodapy import Socrata
 from restaurant import Restaurant
 from covid import nycHealth
+from credentials import GetCredentials
 
 # Unauthenticated client only works with public data sets. Note 'None'
 # in place of application token, and no username or password:
+token, user, pswd = GetCredentials()
 client = Socrata("data.cityofnewyork.us", None) # ADD TOKEN FOR FULL ACCESS
 
 # First 2000 results, returned as JSON from API / converted to Python list of
@@ -16,7 +18,10 @@ results = client.get("pitm-atqc")
 
 # Convert to pandas DataFrame
 results_df = pd.DataFrame.from_records(results)
-
+results_df = results_df.dropna()
+# results_df.apply(lambda x: x.astype(str).str.upper())
+# print(results_df)
+# results_df.drop_duplicates()
 
 # useful attributes: name, business address, zip code, sidewalk/roadway seating or both, alcohol available
 openRests = defaultdict(list)
@@ -48,10 +53,8 @@ for _, row in df.iterrows():
     zipcode = int(row['MODIFIED_ZCTA'])
     caseRate = float(row['COVID_CASE_RATE_4WEEK'])
     pctChange = float(row['PCT_CHANGE_2WEEK'])/100.0
-    testRate = float(row['TESTING_RATE_4WEEK'])
+    testRate = float(row['TESTING_RATE_4WEEK']) / 100000.0
     pctPositive = float(row['PERCENT_POSITIVE_4WEEK'])/100.0
-
-    print(zipcode, row['PCT_CHANGE_2WEEK'], type(row['PCT_CHANGE_2WEEK']))
 
     if zipcode in openRests.keys() and caseRate and pctChange and testRate and pctPositive:
         nycHealthStats[zipcode] = nycHealth(caseRate, pctChange, testRate, pctPositive)
@@ -106,7 +109,7 @@ zip_score = []
 for zipcode, stats in nycHealthStats.items():
     score = -1 * pref_caseRate4Week * stats.covid_case_rate_4week
     score += -1 * pref_pctChange2Week * stats.pct_change_2week
-    score +=  pref_testRate4Week * stats.test_rate_4week
+    score +=  1 * pref_testRate4Week * stats.test_rate_4week
     score +=  -1 * pref_positiveRate4Week * stats.pct_positive_4week
     zip_score.append((zipcode, score))
 
@@ -119,7 +122,7 @@ zip_score = sorted(zip_score, key=lambda x: x[1], reverse=True)
 
 
 # zip_score = list(map(zip_score, lambda score: ((score[1] - minzipscore)/(maxzipscore-minzipscore)) * 10))
-print(zip_score[:3])
+print(zip_score[:10])
 
 # # to test, we plot a scatterplot
 # import matplotlib.pyplot as plt
@@ -129,7 +132,7 @@ print(zip_score[:3])
 
 #  restaurants in the top 3 results 
 
-for zipcode in zip_score[:3]:
-    print("Zipcode: ", zipcode[0])
-    for rest in openRests[zipcode[0]]:
-        print(rest)
+# for zipcode in zip_score[:3]:
+#     print("Zipcode: ", zipcode[0])
+#     for rest in openRests[zipcode[0]]:
+#         print(rest)
