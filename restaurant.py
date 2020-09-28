@@ -11,4 +11,4 @@ class Restaurant:
         return self.sidewalk or self.roadway
     
     def __str__(self):
-        return "{}, {}\n".format(self.name, self.addr)
+        return "{}, {} {}".format(self.name, self.addr, self.zipcode)
