@@ -5,12 +5,13 @@ from restaurant import Restaurant
 from covid import nycHealth
 from sklearn.cluster import KMeans
 from random import seed
+from sklearn import preprocessing
 
 # Unauthenticated client only works with public data sets. Note 'None'
 # in place of application token, and no username or password:
 client = Socrata("data.cityofnewyork.us", None) # ADD TOKEN FOR FULL ACCESS
 
-# First 2000 restaurant_data, returned as JSON from API / converted to Python list of
+# Restaurant_data, returned as JSON from API / converted to Python list of
 # dictionaries by sodapy.
 restaurant_data = client.get("pitm-atqc", limit=15000)
 
@@ -23,6 +24,7 @@ restaurant_df.apply(lambda x: x.astype(str).str.upper())
 restaurant_df = restaurant_df.drop_duplicates()
 print(restaurant_df)
 
+#random seed generator
 seed(42)
 
 # github COVID data, updated weekly
@@ -32,8 +34,18 @@ covid_df = covid_df.dropna()
 
 print(covid_df)
 
-wanted_features = ['COVID_CASE_COUNT_4WEEK', 'COVID_CASE_RATE_4WEEK', 'PCT_CHANGE_2WEEK','TESTING_RATE_4WEEK', 'PERCENT_POSITIVE_4WEEK']
-kmeans = KMeans(n_clusters=3).fit(covid_df[wanted_features])
+wanted_features = ['COVID_CASE_RATE_4WEEK', 'PCT_CHANGE_2WEEK','TESTING_RATE_4WEEK', 'PERCENT_POSITIVE_4WEEK']
 
-covid_df['RISK'] = kmeans.labels_
+# normalize wanted features
+min_max_scaler = preprocessing.MinMaxScaler()
+covid_df[wanted_features] = min_max_scaler.fit_transform(covid_df[wanted_features])
+
+# upped number of rounds and iterations per round to get more consistent answers
+kmeans = KMeans(n_clusters=3, n_init=20, max_iter=500).fit(covid_df[wanted_features])
 print(kmeans.labels_, len(kmeans.labels_))
+print(kmeans.cluster_centers_)
+
+# format data for csv output
+covid_df['RISK'] = kmeans.labels_
+output_features = ['MODIFIED_ZCTA', 'NEIGHBORHOOD_NAME'] + wanted_features + ['RISK']
+covid_df[output_features].to_csv(path_or_buf="kmeans.csv")
