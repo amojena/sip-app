@@ -13,6 +13,7 @@ from operator import itemgetter
 import matplotlib.pyplot as plt
 import folium
 from folium.map import Popup
+from folium.plugins import MarkerCluster
 
 # Unauthenticated client only works with public data sets. Note 'None'
 # in place of application token, and no username or password:
@@ -112,31 +113,67 @@ for _, row in covid_df[['MODIFIED_ZCTA', 'RISK']].iterrows():
         highRestaurants.extend(restaurantPerZip[zipcode])
 
 
+low_risk_icon_create_function = '''
+    function(cluster) {
+            var count = cluster.getChildCount();
+            return L.divIcon({html: '<div><span>' + count + '</span></div>',
+                              className: 'marker-cluster-small',
+                              iconSize: new L.Point(40, 40)});
+    }'''
+
+mid_risk_icon_create_function = '''
+    function(cluster) {
+            var count = cluster.getChildCount();
+            return L.divIcon({html: '<div><span>' + count + '</span></div>',
+                              className: 'marker-cluster-medium',
+                              iconSize: new L.Point(40, 40)});
+    }'''
+
+high_risk_icon_create_function = '''
+    function(cluster) {
+            var count = cluster.getChildCount();
+            return L.divIcon({html: '<div><span>' + count + '</span></div>',
+                              className: 'marker-cluster-large',
+                              iconSize: new L.Point(40, 40)});
+    }'''
+
+
 centralParkCoords = (40.7812, -73.9665)
-m = folium.Map(location=centralParkCoords)
+m = folium.Map(location=centralParkCoords, prefer_canvas=True)
+low_layer = folium.FeatureGroup()
+low_markercluster = MarkerCluster(icon_create_function=low_risk_icon_create_function).add_to(low_layer)
 plt.title('Low')
 x, y = [], []
 for r in lowRestaurants:
     x += [r.longitude]
     y += [r.latitude]
-    folium.Marker(location=(y[-1], x[-1]), popup=r.name, icon=folium.Icon(color='green')).add_to(m)
+    folium.Marker(location=(y[-1], x[-1]), popup=r.name, icon=folium.Icon(color='green')).add_to(low_markercluster)
 
 plt.plot(x,y, 'og')
 
+med_layer = folium.FeatureGroup()
+med_markercluster = MarkerCluster(icon_create_function=mid_risk_icon_create_function).add_to(med_layer)
 x, y = [], []
 for r in midRestaurants:
     x += [r.longitude]
     y += [r.latitude]
-    folium.Marker(location=(y[-1], x[-1]), popup=r.name, icon=folium.Icon(color='orange')).add_to(m)
+    folium.Marker(location=(y[-1], x[-1]), popup=r.name, icon=folium.Icon(color='orange')).add_to(med_markercluster)
 
 plt.plot(x,y, 'oy')
 
+high_layer = folium.FeatureGroup()
+high_markercluster = MarkerCluster(icon_create_function=high_risk_icon_create_function).add_to(high_layer)
 x, y = [], []
 for r in highRestaurants:
     x += [r.longitude]
     y += [r.latitude]
-    folium.Marker(location=(y[-1], x[-1]), popup=r.name, icon=folium.Icon(color='red')).add_to(m)
+    folium.Marker(location=(y[-1], x[-1]), popup=r.name, icon=folium.Icon(color='red')).add_to(high_markercluster)
 
+low_layer.add_to(m)
+med_layer.add_to(m)
+high_layer.add_to(m)
+
+folium.LayerControl().add_to(m)
 
 plt.plot(x, y, 'or')
 plt.legend(['Low', 'Mid', 'High'])
