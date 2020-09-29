@@ -12,13 +12,15 @@ SIP helps you decide which restaurants are safe to dine out with lower risk of e
 
 Following are the 2 data sources used:
 * [Open Restaurant applications](https://data.cityofnewyork.us/Transportation/Open-Restaurant-Applications/pitm-atqc) to get a list of restaurants that are permitted to offer outdoor dining.
-* [Recent Case Data by Zip Code](https://www1.nyc.gov/site/doh/covid/covid-19-data-recent.page) to get each neighborhood's weekly case rate over the past four weeks. **Unlabeled data**
+* [Recent Case Data by Zip Code](https://www1.nyc.gov/site/doh/covid/covid-19-data-recent.page) to get each neighborhood's weekly case rate over the past four weeks. **(Unlabeled data)**
 
 Type: Unsupervised learning  
 Model used: K-means clustering  
 
 Performed K-means clustering to cluster COVID risk areas into LOW, MEDIUM, and HIGH risk.  
 The restaurants are displayed on a map with a color coded risk profile (LOW = green, MEDIUM = orange, HIGH = red)
+
+Find out more [here](https://docs.google.com/presentation/d/1MCzlYl0kCjre2dH0zbQYXR2yP4r4n9uzX5xizaXcv-A/edit?usp=sharing).
 
 
 ## Demo
